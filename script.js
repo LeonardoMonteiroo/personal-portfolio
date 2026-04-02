@@ -1,3 +1,19 @@
+// Toggle menu mobile
+function toggleMenu() {
+    const navMenu = document.getElementById('navMenu');
+    navMenu.classList.toggle('active');
+}
+
+// Fecha menu ao clicar em um link (mobile)
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+        const navMenu = document.getElementById('navMenu');
+        if (navMenu) {
+            navMenu.classList.remove('active');
+        }
+    });
+});
+
 // Aguarda o carregamento completo da página
 document.addEventListener('DOMContentLoaded', function() {
     
