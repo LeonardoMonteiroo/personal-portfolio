@@ -1,0 +1,79 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { t } from '../i18n/ui';
+import { localePath } from '../lib/resume';
+
+// GitHub Pages serves one 404 for every path, so it shows both languages.
+const en = t('en').notFound;
+const pt = t('pt').notFound;
+---
+
+<Base lang="en" title={en.metaTitle} description={en.body} path="404/" noindex>
+  <section class="container nf">
+    <div class="panel nf-panel">
+      <div class="panel-head">
+        <span class="panel-title"><span class="dot" aria-hidden="true"></span> status: 404 · severity: low</span>
+      </div>
+      <div class="panel-body nf-body">
+        <p class="mono code" aria-hidden="true">404</p>
+        <h1>{en.title}</h1>
+        <p>{en.body}</p>
+        <p lang="pt-BR" class="pt">{pt.body}</p>
+        <div class="nf-actions">
+          <a class="btn btn-primary" href={localePath('en')}>
+            <Icon name="arrow-left" size={16} />
+            {en.home}
+          </a>
+          <a class="btn" href={localePath('pt')} lang="pt-BR">{pt.home}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    max-width: 720px;
+    padding-top: clamp(40px, 10vw, 96px);
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--warn);
+  }
+
+  .nf-body {
+    display: grid;
+    gap: 12px;
+    padding: clamp(24px, 5vw, 40px);
+  }
+
+  .code {
+    font-size: clamp(3rem, 2rem + 5vw, 5rem);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  h1 {
+    font-size: clamp(1.4rem, 1.1rem + 1.2vw, 1.9rem);
+  }
+
+  .nf-body p:not(.code) {
+    color: var(--text-2);
+  }
+
+  .pt {
+    color: var(--muted) !important;
+  }
+
+  .nf-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+  }
+</style>

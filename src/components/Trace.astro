@@ -1,0 +1,584 @@
+---
+import { formatDuration, formatMonth, getResume, monthIndexOf, toMonthIndex, type Lang } from '../lib/resume';
+import { domainFor, layoutSpan, yearTicks, type RangeKey } from '../lib/trace';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const ui = t(lang).experience;
+const resume = getResume(lang);
+const now = monthIndexOf(new Date());
+
+type Row = {
+  id: string;
+  group: 'work' | 'education';
+  kind: 'org' | 'work' | 'edu';
+  depth: 0 | 1;
+  name: string;
+  sub: string;
+  start: string;
+  end?: string;
+  highlights: string[];
+};
+
+const work = resume.work as { name: string; position: string; startDate: string; endDate?: string; highlights: string[] }[];
+const companies = [...new Set(work.map((w) => w.name))];
+const rows: Row[] = [];
+
+for (const company of companies) {
+  const roles = work.filter((w) => w.name === company);
+  const start = roles.map((r) => r.startDate).sort()[0];
+  const ongoing = roles.some((r) => !r.endDate);
+  const end = ongoing ? undefined : roles.map((r) => r.endDate!).sort().at(-1);
+  rows.push({ id: `org-${rows.length}`, group: 'work', kind: 'org', depth: 0, name: company, sub: '', start, end, highlights: [] });
+  for (const r of [...roles].sort((a, b) => a.startDate.localeCompare(b.startDate))) {
+    rows.push({
+      id: `role-${rows.length}`,
+      group: 'work',
+      kind: 'work',
+      depth: 1,
+      name: r.position,
+      sub: company,
+      start: r.startDate,
+      end: r.endDate,
+      highlights: r.highlights,
+    });
+  }
+}
+
+const education = resume.education as { institution: string; area: string; studyType: string; startDate: string; endDate?: string; courses: string[] }[];
+for (const e of [...education].sort((a, b) => a.startDate.localeCompare(b.startDate))) {
+  rows.push({
+    id: `edu-${rows.length}`,
+    group: 'education',
+    kind: 'edu',
+    depth: 0,
+    name: `${e.studyType}, ${e.area}`,
+    sub: e.institution.split(' - ')[0],
+    start: e.startDate,
+    end: e.endDate,
+    highlights: e.courses,
+  });
+}
+
+const earliest = Math.min(...rows.map((r) => toMonthIndex(r.start)));
+const initialRange: RangeKey = 'all';
+const { from, to } = domainFor(initialRange, now, earliest);
+const ticks = yearTicks(from, to);
+const ranges: RangeKey[] = ['1y', '2y', '3y', 'all'];
+const defaultSelected = rows.find((r) => r.kind === 'work' && !r.end)?.id ?? rows[1].id;
+
+const withLayout = rows.map((r) => {
+  const s = toMonthIndex(r.start);
+  const e = r.end ? toMonthIndex(r.end) : undefined;
+  return {
+    ...r,
+    s,
+    e,
+    layout: layoutSpan({ start: s, end: e }, from, to),
+    duration: formatDuration((e ?? now + 1) - s, lang),
+    dates: `${formatMonth(r.start, lang)} – ${formatMonth(r.end, lang)}`,
+  };
+});
+const detailRows = withLayout.filter((r) => r.kind !== 'org');
+---
+
+<div class="trace panel" data-trace data-earliest={earliest} data-lang={lang}>
+  <div class="panel-head">
+    <span class="panel-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"
+        ><path d="M3 6h10M7 12h12M5 18h8"></path></svg
+      >
+      trace · career
+    </span>
+    <div class="range" role="group" aria-label={ui.range}>
+      <span class="range-label" aria-hidden="true">{ui.range}</span>
+      {
+        ranges.map((r) => (
+          <button
+            type="button"
+            class="range-btn mono"
+            data-range={r}
+            aria-pressed={r === initialRange ? 'true' : 'false'}
+            aria-label={ui.rangesLong[r]}
+            title={ui.rangesLong[r]}
+          >
+            {ui.ranges[r]}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="trace-body">
+    <div class="trace-axis" aria-hidden="true">
+      <div class="axis-spacer"></div>
+      <div class="axis-track" data-axis>
+        {ticks.map((tk) => <span class="tick mono" style={`left:${tk.left}%`}>{tk.label}</span>)}
+      </div>
+    </div>
+
+    {
+      (['work', 'education'] as const).map((group) => (
+        <div class="trace-group">
+          <p class="group-label mono">{group === 'work' ? ui.work : ui.education}</p>
+          <ul class="trace-rows" role="list">
+            {withLayout
+              .filter((r) => r.group === group)
+              .map((r) => (
+                <li class:list={['trace-row', `depth-${r.depth}`, `kind-${r.kind}`]} data-start={r.s} data-end={r.e ?? ''}>
+                  {r.kind === 'org' ? (
+                    <div class="row-inner">
+                      <span class="row-label">
+                        <span class="row-name">{r.name}</span>
+                        <span class="row-meta mono">{r.duration}</span>
+                      </span>
+                      <span class="row-track">
+                        <span class="bar" data-bar style={`left:${r.layout.left}%;width:${r.layout.width}%`} />
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      class="row-inner"
+                      data-span={r.id}
+                      aria-controls={`detail-${r.id}`}
+                      aria-expanded={r.id === defaultSelected ? 'true' : 'false'}
+                    >
+                      <span class="row-label">
+                        <span class="row-name">{r.name}</span>
+                        <span class="row-meta mono">
+                          {r.dates} · {r.duration}
+                        </span>
+                      </span>
+                      <span class="row-track">
+                        <span
+                          class:list={['bar', { ongoing: !r.end, narrow: r.layout.width < 9 }]}
+                          data-bar
+                          style={`left:${r.layout.left}%;width:${r.layout.width}%`}
+                        >
+                          <span class="bar-text mono">{r.duration}</span>
+                        </span>
+                      </span>
+                    </button>
+                  )}
+                </li>
+              ))}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+
+  <div class="trace-details" aria-live="polite">
+    {
+      detailRows.map((r) => (
+        <article
+          id={`detail-${r.id}`}
+          class:list={['span-detail', `kind-${r.kind}`, { 'is-active': r.id === defaultSelected }]}
+          data-detail={r.id}
+        >
+          <header class="detail-head">
+            <div>
+              <h3 class="detail-title">{r.name}</h3>
+              <p class="detail-sub">{r.sub}</p>
+            </div>
+            <p class="detail-dates mono">
+              {r.dates}
+              <span> · {r.duration}</span>
+            </p>
+          </header>
+          <ul class="detail-list">
+            {r.highlights.map((h) => (
+              <li>{h}</li>
+            ))}
+          </ul>
+        </article>
+      ))
+    }
+  </div>
+</div>
+
+<script>
+  import { domainFor, layoutSpan, yearTicks, type RangeKey } from '../lib/trace';
+
+  for (const trace of document.querySelectorAll<HTMLElement>('[data-trace]')) {
+    const earliest = Number(trace.dataset.earliest);
+    const d = new Date();
+    const now = d.getUTCFullYear() * 12 + d.getUTCMonth();
+    const axis = trace.querySelector<HTMLElement>('[data-axis]')!;
+    const rows = [...trace.querySelectorAll<HTMLElement>('.trace-row')];
+    const buttons = [...trace.querySelectorAll<HTMLButtonElement>('[data-range]')];
+    const spans = [...trace.querySelectorAll<HTMLButtonElement>('[data-span]')];
+    const details = [...trace.querySelectorAll<HTMLElement>('[data-detail]')];
+
+    function applyRange(range: RangeKey) {
+      const { from, to } = domainFor(range, now, earliest);
+      for (const row of rows) {
+        const start = Number(row.dataset.start);
+        const end = row.dataset.end ? Number(row.dataset.end) : undefined;
+        const l = layoutSpan({ start, end }, from, to);
+        const bar = row.querySelector<HTMLElement>('[data-bar]')!;
+        bar.style.left = `${l.left}%`;
+        bar.style.width = `${l.width}%`;
+        row.classList.toggle('is-out', !l.visible);
+        bar.classList.toggle('clip-start', l.clippedStart);
+        bar.classList.toggle('narrow', l.width < 9);
+      }
+      axis.replaceChildren(
+        ...yearTicks(from, to).map((tk) => {
+          const s = document.createElement('span');
+          s.className = 'tick mono';
+          s.style.left = `${tk.left}%`;
+          s.textContent = tk.label;
+          return s;
+        }),
+      );
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.range === range)));
+    }
+
+    function select(id: string) {
+      spans.forEach((s) => s.setAttribute('aria-expanded', String(s.dataset.span === id)));
+      details.forEach((dt) => dt.classList.toggle('is-active', dt.dataset.detail === id));
+    }
+
+    buttons.forEach((b) => b.addEventListener('click', () => applyRange(b.dataset.range as RangeKey)));
+    spans.forEach((s) => s.addEventListener('click', () => select(s.dataset.span!)));
+    trace.classList.add('is-interactive');
+  }
+</script>
+
+<style>
+  .trace {
+    overflow: hidden;
+  }
+
+  .range {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--panel-2);
+  }
+
+  .range-label {
+    padding: 0 8px 0 6px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .range-btn {
+    min-width: 36px;
+    height: 26px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .range-btn:hover {
+    color: var(--text);
+  }
+
+  .range-btn[aria-pressed='true'] {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .trace:not(.is-interactive) .range {
+    display: none;
+  }
+
+  .trace-body {
+    --label-w: 290px;
+    padding: 8px 16px 12px;
+  }
+
+  .trace-axis,
+  .row-inner {
+    display: grid;
+    grid-template-columns: var(--label-w) 1fr;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .axis-track {
+    position: relative;
+    height: 26px;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .tick {
+    position: absolute;
+    bottom: 4px;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .tick::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    height: 5px;
+    border-left: 1px solid var(--border-strong);
+  }
+
+  .group-label {
+    margin: 14px 0 4px;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .trace-rows {
+    list-style: none;
+  }
+
+  .row-inner {
+    width: 100%;
+    padding: 7px 8px;
+    margin-inline: -8px;
+    width: calc(100% + 16px);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    text-align: left;
+    color: inherit;
+  }
+
+  button.row-inner {
+    cursor: pointer;
+  }
+
+  button.row-inner:hover {
+    background: var(--panel-hover);
+  }
+
+  button.row-inner[aria-expanded='true'] {
+    background: var(--panel-2);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+
+  .trace:not(.is-interactive) button.row-inner[aria-expanded='true'] {
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .row-label {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .depth-1 .row-label {
+    padding-left: 18px;
+    position: relative;
+  }
+
+  .depth-1 .row-label::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: -10px;
+    bottom: 50%;
+    width: 8px;
+    border-left: 1px solid var(--border-strong);
+    border-bottom: 1px solid var(--border-strong);
+    border-bottom-left-radius: 4px;
+  }
+
+  .row-name {
+    font-size: 14px;
+    font-weight: 550;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .kind-org .row-name {
+    font-weight: 650;
+  }
+
+  .row-meta {
+    font-size: 11.5px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .row-track {
+    position: relative;
+    height: 22px;
+  }
+
+  .bar {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    display: flex;
+    align-items: center;
+    min-width: 4px;
+    border-radius: 4px;
+    overflow: hidden;
+    transition:
+      left 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
+      width 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
+      opacity 0.3s ease;
+  }
+
+  .kind-org .bar {
+    background: repeating-linear-gradient(135deg, var(--border-strong) 0 6px, transparent 6px 10px);
+    border: 1px solid var(--border-strong);
+    top: 6px;
+    bottom: 6px;
+  }
+
+  .kind-work .bar {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+  }
+
+  .kind-edu .bar {
+    background: var(--edu-soft);
+    border: 1px solid var(--edu);
+  }
+
+  .bar.ongoing {
+    border-right-style: dashed;
+  }
+
+  .bar.clip-start {
+    border-left-style: dashed;
+  }
+
+  .bar-text {
+    padding: 0 8px;
+    font-size: 11px;
+    color: var(--text-2);
+    white-space: nowrap;
+  }
+
+  .bar.narrow .bar-text {
+    display: none;
+  }
+
+  .is-out .bar {
+    opacity: 0;
+  }
+
+  .is-out .row-label {
+    opacity: 0.45;
+  }
+
+  .trace-details {
+    border-top: 1px solid var(--border);
+    background: var(--panel-2);
+  }
+
+  .span-detail {
+    padding: 18px 16px 20px;
+  }
+
+  .span-detail + .span-detail {
+    border-top: 1px solid var(--border);
+  }
+
+  .trace.is-interactive .span-detail:not(.is-active) {
+    display: none;
+  }
+
+  .trace.is-interactive .span-detail + .span-detail {
+    border-top: 0;
+  }
+
+  .detail-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px 16px;
+    margin-bottom: 12px;
+  }
+
+  .detail-title {
+    font-size: 17px;
+    font-weight: 650;
+  }
+
+  .detail-sub {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .detail-dates {
+    font-size: 12px;
+    color: var(--text-2);
+  }
+
+  .detail-dates span {
+    color: var(--muted);
+  }
+
+  .detail-list {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+  }
+
+  .detail-list li {
+    position: relative;
+    padding-left: 18px;
+    color: var(--text-2);
+    font-size: 15px;
+    max-width: 80ch;
+  }
+
+  .detail-list li::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 0.62em;
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  .kind-edu .detail-list li::before {
+    background: var(--edu);
+  }
+
+  @media (max-width: 760px) {
+    .trace-body {
+      --label-w: 1fr;
+    }
+    .trace-axis {
+      grid-template-columns: 1fr;
+    }
+    .axis-spacer {
+      display: none;
+    }
+    .row-inner {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+    .bar-text {
+      display: none;
+    }
+    .range-label {
+      display: none;
+    }
+  }
+</style>

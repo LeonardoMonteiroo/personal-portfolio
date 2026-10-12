@@ -1,0 +1,232 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jsonresume/resume-schema/v1.0.0/schema.json",
+  "basics": {
+    "name": "Leonardo Monteiro da Silva",
+    "label": "Desenvolvedor Full Stack & Tech Lead",
+    "email": "leonardo.monteiro599@outlook.com",
+    "phone": "+55 47 98890-1682",
+    "url": "https://leonardomonteiroo.github.io/personal-portfolio/",
+    "summary": "Desenvolvedor Full Stack com quatro anos de experiência construindo e mantendo aplicações em TypeScript, Node.js e React para um produto SaaS em produção no Google Cloud, usado por mais de 30 mil clínicas. Entreguei mais de 80 funcionalidades e resolvi mais de 1.600 chamados de suporte no módulo financeiro da plataforma, introduzi testes automatizados (Jest/TDD) no time e hoje conduzo a migração do módulo para uma arquitetura de micro-frontends. Atualmente lidero um time de 6 desenvolvedores e curso Engenharia de Software na UNINTER.",
+    "location": {
+      "city": "Florianópolis",
+      "region": "SC",
+      "countryCode": "BR"
+    },
+    "profiles": [
+      {
+        "network": "GitHub",
+        "username": "LeonardoMonteiroo",
+        "url": "https://github.com/LeonardoMonteiroo"
+      },
+      {
+        "network": "LinkedIn",
+        "username": "leonardo-monteiroo",
+        "url": "https://linkedin.com/in/leonardo-monteiroo"
+      }
+    ]
+  },
+  "work": [
+    {
+      "name": "Clinicorp Solutions",
+      "position": "Tech Lead",
+      "startDate": "2026-04",
+      "summary": "",
+      "highlights": [
+        "Lidero um time de 6 desenvolvedores (1 júnior, 4 plenos, 1 sênior) dentro de um squad de 10 pessoas, atuando de forma hands-on como maior contribuidor do novo micro-frontend financeiro (54% dos commits)",
+        "Conduzo as decisões técnicas e a qualidade de código do squad, tendo revisado mais de 800 pull requests desde 2023",
+        "Arquitetei e estabeleci o novo módulo financeiro como um micro-frontend em TypeScript (React, Vite) e conduzo sua migração incremental a partir do módulo legado em JavaScript: duas telas (conta corrente e configuração do emissor de NFSe) em produção, seis módulos em andamento e mais de 200 arquivos de teste na nova base de código",
+        "Automatizo o fluxo do squad com Claude Code: criei uma skill de revisão de pull request (oráculo cego, nove analisadores especializados, passada adversarial), um radar de regressões duas vezes ao dia sobre tickets de suporte com relatório no Google Chat e skills de fechamento de branch, deploy de pré e testes de UI; contribuo com o marketplace interno de plugins do time de engenharia"
+      ]
+    },
+    {
+      "name": "Clinicorp Solutions",
+      "position": "Desenvolvedor Full Stack",
+      "startDate": "2022-02",
+      "endDate": "2026-04",
+      "summary": "",
+      "highlights": [
+        "Entreguei mais de 80 funcionalidades no módulo financeiro de um SaaS usado por mais de 30 mil clínicas odontológicas e 200 mil usuários ativos, com mais de 290 pull requests de autoria mergeados em React, Node.js e TypeScript sobre Google Cloud (Datastore, Pub/Sub), em um squad Scrum/Kanban",
+        "Refatorei e mantive código legado, resolvendo 12 débitos técnicos e corrigindo cerca de 100 bugs no sistema",
+        "Conduzi a adoção de testes automatizados (Jest/TDD), criando e mantendo mais de 30 suítes de teste em quase 40 pull requests, melhorando a confiabilidade e a manutenibilidade do código",
+        "Resolvi mais de 1.600 chamados de suporte em produção no módulo financeiro, depurando com Grafana, Loki e logs do Google Cloud e reprocessando mensagens do Pub/Sub em produção",
+        "Construí e mantive integrações do módulo financeiro com quatro sistemas externos: fintech interna, Saúde Service (pagamento por cartão), Focus (emissão de NFSe) e CDL/SPC (consulta de crédito e registro no SPC)",
+        "Criei os dashboards de observabilidade do módulo financeiro em Grafana sobre Prometheus, Loki e Tempo, usados pelo squad no acompanhamento de dashboards e alertas"
+      ]
+    },
+    {
+      "name": "Clinicorp Solutions",
+      "position": "Estágio em Desenvolvimento",
+      "startDate": "2021-12",
+      "endDate": "2022-02",
+      "summary": "",
+      "highlights": [
+        "Correção de bugs e entrega de pequenas melhorias no sistema em produção"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "UNINTER - Centro Universitário Internacional",
+      "area": "Engenharia de Software",
+      "studyType": "Bacharelado",
+      "startDate": "2025-02",
+      "courses": [
+        "Aprofundamento nas áreas de planejamento, desenvolvimento e manutenção de softwares",
+        "Conhecimento em gestão de projetos, arquitetura e testes"
+      ]
+    },
+    {
+      "institution": "SENAI - Serviço Nacional de Aprendizagem Industrial",
+      "area": "Desenvolvimento de Sistemas",
+      "studyType": "Técnico",
+      "startDate": "2021-03",
+      "endDate": "2022-07",
+      "courses": [
+        "Introdução aos fundamentos de desenvolvimento de software"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "name": "Linguagens de Programação",
+      "level": "",
+      "keywords": [
+        "TypeScript",
+        "JavaScript",
+        "SQL"
+      ]
+    },
+    {
+      "name": "Back-end",
+      "level": "",
+      "keywords": [
+        "Node.js",
+        "Fastify",
+        "APIs REST",
+        "WebSocket",
+        "Zod",
+        "ORM (Prisma, Knex)"
+      ]
+    },
+    {
+      "name": "Front-end",
+      "level": "",
+      "keywords": [
+        "React",
+        "Vite",
+        "Micro-frontends",
+        "HTML5",
+        "CSS3"
+      ]
+    },
+    {
+      "name": "Bancos de Dados",
+      "level": "",
+      "keywords": [
+        "Google Cloud Datastore (produção)",
+        "BigQuery",
+        "PostgreSQL",
+        "NoSQL"
+      ]
+    },
+    {
+      "name": "DevOps & Cloud",
+      "level": "",
+      "keywords": [
+        "Google Cloud Platform",
+        "Google Cloud Pub/Sub",
+        "Docker",
+        "CI/CD",
+        "Grafana (Prometheus, Loki, Tempo)"
+      ]
+    },
+    {
+      "name": "Testes & Qualidade",
+      "level": "",
+      "keywords": [
+        "Jest",
+        "TDD",
+        "Code Review",
+        "SOLID",
+        "Clean Code"
+      ]
+    },
+    {
+      "name": "Ferramentas & Ágil",
+      "level": "",
+      "keywords": [
+        "Git",
+        "GitHub",
+        "JIRA",
+        "Scrum/Kanban"
+      ]
+    }
+  ],
+  "languages": [
+    {
+      "language": "Português",
+      "fluency": "Nativo"
+    },
+    {
+      "language": "Inglês",
+      "fluency": "C1 certificado (EF SET)"
+    },
+    {
+      "language": "LIBRAS",
+      "fluency": "Intermediário"
+    }
+  ],
+  "certificates": [
+    {
+      "name": "Princípios SOLID",
+      "issuer": "Udemy",
+      "url": ""
+    },
+    {
+      "name": "Comunicação Assertiva",
+      "issuer": "Udemy",
+      "url": ""
+    },
+    {
+      "name": "SQL para Análise de Dados",
+      "issuer": "Data Driven School",
+      "url": ""
+    }
+  ],
+  "projects": [
+    {
+      "name": "voting-api",
+      "description": "Backend em Node.js e TypeScript: API REST com Fastify, Prisma, Docker, Zod e WebSocket.",
+      "url": "https://github.com/LeonardoMonteiroo/voting-api",
+      "keywords": [
+        "TypeScript",
+        "Node.js",
+        "Fastify",
+        "Prisma",
+        "Docker",
+        "WebSocket"
+      ]
+    },
+    {
+      "name": "transactions-api",
+      "description": "API REST em TypeScript utilizando Fastify e Knex.",
+      "url": "https://github.com/LeonardoMonteiroo/transactions-api",
+      "keywords": [
+        "TypeScript",
+        "Node.js",
+        "Fastify",
+        "Knex"
+      ]
+    },
+    {
+      "name": "habits-manager",
+      "description": "Aplicação full stack de gestão de hábitos (web e mobile) em TypeScript.",
+      "url": "https://github.com/LeonardoMonteiroo/habits-manager",
+      "keywords": [
+        "TypeScript",
+        "React",
+        "React Native"
+      ]
+    }
+  ]
+}

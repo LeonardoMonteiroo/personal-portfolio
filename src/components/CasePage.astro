@@ -1,0 +1,392 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from './Icon.astro';
+import { cases, type CaseStudy } from '../data/cases';
+import { site, t } from '../i18n/ui';
+import { formatMonth, localePath, url, type Lang } from '../lib/resume';
+
+interface Props {
+  lang: Lang;
+  study: CaseStudy;
+}
+
+const { lang, study } = Astro.props;
+const ui = t(lang);
+const c = study[lang];
+const path = `cases/${study.slug}/`;
+const idx = cases.findIndex((x) => x.slug === study.slug);
+const next = cases[(idx + 1) % cases.length];
+const abs = (p: string) => new URL(p, Astro.site!).href;
+const pageUrl = abs(localePath(lang, path));
+const homeUrl = abs(localePath(lang));
+
+const blocks = [
+  { id: 'context', label: ui.cases.context, items: c.context },
+  { id: 'problem', label: ui.cases.problem, items: c.problem },
+  { id: 'approach', label: ui.cases.approach, items: c.approach },
+  { id: 'outcome', label: ui.cases.outcome, items: c.outcome },
+] as const;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: c.title,
+    description: c.summary,
+    inLanguage: ui.htmlLang,
+    url: pageUrl,
+    mainEntityOfPage: pageUrl,
+    image: abs(url(`og/${lang}.png`)),
+    author: { '@type': 'Person', name: site.fullName, url: abs(localePath('en')), '@id': `${abs(localePath('en'))}#person` },
+    keywords: study.stack.join(', '),
+    about: study.stack.map((s) => ({ '@type': 'Thing', name: s })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: site.name, item: homeUrl },
+      { '@type': 'ListItem', position: 2, name: ui.cases.title, item: `${homeUrl}#cases` },
+      { '@type': 'ListItem', position: 3, name: c.title, item: pageUrl },
+    ],
+  },
+];
+
+const metaTitle = `${c.title} — ${site.name}`;
+---
+
+<Base lang={lang} title={metaTitle} description={c.summary} path={path} ogType="article" jsonLd={jsonLd}>
+  <article class="container case" aria-labelledby="case-title">
+    <nav class="crumbs mono" aria-label="Breadcrumb">
+      <a href={localePath(lang)}>{site.name}</a>
+      <span aria-hidden="true">/</span>
+      <a href={localePath(lang, '#cases')}>{ui.cases.title}</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">runbook-{String(idx + 1).padStart(2, '0')}</span>
+    </nav>
+
+    <header class="case-header">
+      <h1 id="case-title" class="case-title">{c.title}</h1>
+      <p class="case-lede">{c.summary}</p>
+      <dl class="case-facts">
+        <div>
+          <dt class="mono">{ui.cases.role}</dt>
+          <dd>{c.role}</dd>
+        </div>
+        <div>
+          <dt class="mono">{ui.cases.period}</dt>
+          <dd>{formatMonth(study.period.start, lang)} – {formatMonth(study.period.end, lang)}</dd>
+        </div>
+        <div>
+          <dt class="mono">{ui.cases.stack}</dt>
+          <dd>
+            <ul class="chips" role="list">
+              {study.stack.map((s) => <li class="chip">{s}</li>)}
+            </ul>
+          </dd>
+        </div>
+      </dl>
+    </header>
+
+    <section class="panel metrics" aria-label={ui.cases.keyNumbers}>
+      <div class="panel-head">
+        <span class="panel-title">{ui.cases.keyNumbers}</span>
+      </div>
+      <dl class="metrics-grid">
+        {
+          c.metrics.map((m) => (
+            <div>
+              <dt class="mono">{m.value}</dt>
+              <dd>{m.label}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </section>
+
+    <div class="runbook">
+      {
+        blocks.map((b, i) => (
+          <section class="panel step" aria-labelledby={`step-${b.id}`}>
+            <div class="panel-head">
+              <span class="panel-title">
+                <span class="step-num mono">{String(i + 1).padStart(2, '0')}</span>
+                <h2 id={`step-${b.id}`} class="step-title">
+                  {b.label}
+                </h2>
+              </span>
+            </div>
+            <ul class="step-list panel-body">
+              {b.items.map((it) => (
+                <li>{it}</li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+
+    <p class="disclaimer">{ui.cases.disclaimer}</p>
+
+    <footer class="case-foot">
+      <a class="btn" href={localePath(lang, '#cases')}>
+        <Icon name="arrow-left" size={16} />
+        {ui.cases.back}
+      </a>
+      <a class="next panel" href={localePath(lang, `cases/${next.slug}/`)}>
+        <span class="mono next-label">{ui.cases.next}</span>
+        <span class="next-title">{next[lang].title}</span>
+        <Icon name="arrow-right" size={18} class="next-arrow" />
+      </a>
+    </footer>
+
+    <aside class="panel case-cta">
+      <p>{site.showAvailability ? ui.contact.availability : ui.contact.noAvailability}</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href={`mailto:${site.email}`}>
+          <Icon name="mail" size={17} />
+          {ui.hero.ctaEmail}
+        </a>
+        <a class="btn" href={url(site.cv[lang])} download>
+          <Icon name="download" size={17} />
+          {ui.hero.ctaCv}
+        </a>
+      </div>
+    </aside>
+  </article>
+</Base>
+
+<style>
+  .case {
+    max-width: 920px;
+    padding-top: clamp(24px, 4vw, 40px);
+  }
+
+  .crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .crumbs a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+
+  .crumbs a:hover {
+    color: var(--accent);
+  }
+
+  .case-header {
+    margin-top: 20px;
+  }
+
+  .case-title {
+    font-size: clamp(1.8rem, 1.3rem + 2.2vw, 2.8rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .case-lede {
+    margin-top: 14px;
+    font-size: clamp(1.02rem, 0.95rem + 0.3vw, 1.18rem);
+    color: var(--text-2);
+    max-width: 68ch;
+  }
+
+  .case-facts {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px 32px;
+    margin: 24px 0 0;
+    padding: 16px 0;
+    border-block: 1px solid var(--border);
+  }
+
+  .case-facts > div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .case-facts dt {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+
+  .case-facts dd {
+    margin: 0;
+    font-size: 15px;
+  }
+
+  .metrics {
+    margin-top: 24px;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    margin: 0;
+  }
+
+  .metrics-grid > div {
+    padding: 16px;
+    border-right: 1px solid var(--border);
+  }
+
+  .metrics-grid > div:last-child {
+    border-right: 0;
+  }
+
+  .metrics-grid dt {
+    font-size: 1.8rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+  }
+
+  .metrics-grid dd {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .runbook {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .step-num {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 20px;
+    border-radius: 4px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .step-title {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .step-list {
+    display: grid;
+    gap: 10px;
+    list-style: none;
+  }
+
+  .step-list li {
+    position: relative;
+    padding-left: 20px;
+    color: var(--text-2);
+    font-size: 16px;
+  }
+
+  .step-list li::before {
+    content: '›';
+    position: absolute;
+    left: 4px;
+    top: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .disclaimer {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .case-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  .case-foot > .btn {
+    align-self: center;
+  }
+
+  .next {
+    position: relative;
+    display: grid;
+    gap: 4px;
+    min-width: min(100%, 360px);
+    max-width: 480px;
+    padding: 14px 44px 14px 16px;
+    text-decoration: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .next:hover {
+    border-color: var(--accent);
+  }
+
+  .next-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .next-title {
+    font-weight: 600;
+  }
+
+  .next :global(.next-arrow) {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent);
+  }
+
+  .case-cta {
+    margin-top: 32px;
+    padding: 22px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .case-cta p {
+    max-width: 52ch;
+    color: var(--text-2);
+  }
+
+  .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  @media (max-width: 560px) {
+    .case-facts {
+      grid-template-columns: 1fr;
+    }
+    .metrics-grid > div {
+      border-right: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .metrics-grid > div:last-child {
+      border-bottom: 0;
+    }
+  }
+</style>

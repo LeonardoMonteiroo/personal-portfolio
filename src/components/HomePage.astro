@@ -1,0 +1,1052 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Icon from './Icon.astro';
+import Trace from './Trace.astro';
+import profile from '../assets/portrait.jpg';
+import { cases } from '../data/cases';
+import { getProjects } from '../data/projects';
+import { site, t } from '../i18n/ui';
+import { formatMonth, getResume, localePath, url, type Lang } from '../lib/resume';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const ui = t(lang);
+const resume = getResume(lang);
+const projects = await getProjects();
+const numberLocale = lang === 'en' ? 'en-US' : 'pt-BR';
+const fmt = (n: number) => n.toLocaleString(numberLocale);
+const siteUrl = Astro.site!;
+const abs = (p: string) => new URL(p, siteUrl).href;
+const pageUrl = abs(localePath(lang));
+
+const logLines =
+  lang === 'en'
+    ? [
+        ['2021-03', 'INFO', 'Started a Technical Degree in Systems Development at SENAI.'],
+        ['2021-12', 'INFO', 'Joined Clinicorp as a development intern, fixing bugs in a production system.'],
+        ['2022-02', 'INFO', 'Became a Full Stack Developer on the platform’s financial module.'],
+        ['2023', 'INFO', 'Reviewing the squad’s pull requests: 800+ reviews since 2023.'],
+        ['2024-09', 'INFO', 'English: EF SET C1 certified (reading C2, listening B2).'],
+        ['2025-02', 'INFO', 'Started a Bachelor’s in Software Engineering at UNINTER.'],
+        ['2026-04', 'NOTICE', 'Promoted to Tech Lead: leading 6 developers, still hands-on.'],
+        ['now', 'DEBUG', 'Born in Porto Alegre, based in Florianópolis. Also speaks LIBRAS (Brazilian Sign Language) at an intermediate level.'],
+        ['now', 'DEBUG', 'Off hours: volleyball, basketball, strategy games, fantasy books and Brazilian music.'],
+      ]
+    : [
+        ['2021-03', 'INFO', 'Comecei o Técnico em Desenvolvimento de Sistemas no SENAI.'],
+        ['2021-12', 'INFO', 'Entrei na Clinicorp como estagiário, corrigindo bugs em um sistema em produção.'],
+        ['2022-02', 'INFO', 'Passei a Desenvolvedor Full Stack no módulo financeiro da plataforma.'],
+        ['2023', 'INFO', 'Revisando os pull requests do squad: mais de 800 revisões desde 2023.'],
+        ['2024-09', 'INFO', 'Inglês: certificado EF SET C1 (leitura C2, compreensão oral B2).'],
+        ['2025-02', 'INFO', 'Comecei o Bacharelado em Engenharia de Software na UNINTER.'],
+        ['2026-04', 'NOTICE', 'Promovido a Tech Lead: lidero 6 desenvolvedores sem sair do código.'],
+        ['now', 'DEBUG', 'Nasci em Porto Alegre e moro em Florianópolis. Também me comunico em LIBRAS em nível intermediário.'],
+        ['now', 'DEBUG', 'Fora do trabalho: vôlei, basquete, jogos de estratégia, livros de fantasia e música brasileira.'],
+      ];
+
+const rawJson = JSON.stringify(
+  {
+    basics: {
+      name: resume.basics.name,
+      label: resume.basics.label,
+      email: resume.basics.email,
+      location: resume.basics.location,
+      profiles: resume.basics.profiles.map((p) => ({ network: p.network, url: p.url })),
+    },
+    skills: resume.skills.map((s) => ({ name: s.name, keywords: s.keywords })),
+    languages: resume.languages,
+  },
+  null,
+  2,
+);
+
+const knowsAbout = resume.skills.flatMap((s) => s.keywords).slice(0, 30);
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    '@id': `${pageUrl}#profile`,
+    url: pageUrl,
+    name: ui.metaTitle,
+    inLanguage: ui.htmlLang,
+    dateModified: new Date().toISOString(),
+    mainEntity: { '@id': `${abs(localePath('en'))}#person` },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    '@id': `${abs(localePath('en'))}#person`,
+    name: site.fullName,
+    alternateName: site.name,
+    jobTitle: resume.basics.label,
+    description: resume.basics.summary,
+    url: abs(localePath('en')),
+    image: abs(url('og/profile.jpg')),
+    email: `mailto:${site.email}`,
+    address: { '@type': 'PostalAddress', addressLocality: 'Florianópolis', addressRegion: 'SC', addressCountry: 'BR' },
+    worksFor: { '@type': 'Organization', name: 'Clinicorp Solutions' },
+    alumniOf: resume.education.map((e) => ({ '@type': 'EducationalOrganization', name: e.institution.split(' - ')[0] })),
+    knowsAbout,
+    knowsLanguage: ['pt-BR', 'en', 'bzs'],
+    sameAs: [site.github, site.linkedin],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${abs(localePath('en'))}#website`,
+    url: abs(localePath('en')),
+    name: site.name,
+    inLanguage: ['en', 'pt-BR'],
+    author: { '@id': `${abs(localePath('en'))}#person` },
+  },
+];
+---
+
+<Base lang={lang} title={ui.metaTitle} description={ui.metaDescription} path="" ogType="profile" jsonLd={jsonLd}>
+  <!-- Overview -->
+  <section class="container hero-section" aria-labelledby="hero-title">
+    <div class="panel hero">
+      <div class="panel-head">
+        <span class="panel-title">
+          <span class="status-dot" aria-hidden="true"></span>
+          {ui.hero.eyebrow}
+        </span>
+        <span class="mono hero-loc">
+          <Icon name="map-pin" size={13} />
+          {ui.hero.location}
+        </span>
+      </div>
+      <div class="hero-body">
+        <div class="hero-copy">
+          {
+            site.showAvailability && (
+              <p class="availability">
+                <span class="status-dot" aria-hidden="true" />
+                {ui.hero.status}
+              </p>
+            )
+          }
+          <h1 id="hero-title" class="hero-title">
+            {site.name}
+            <span class="hero-role">{ui.hero.role}</span>
+          </h1>
+          <p class="hero-pitch">{ui.hero.pitch}</p>
+          <div class="hero-ctas">
+            <a class="btn btn-primary" href={`mailto:${site.email}`}>
+              <Icon name="mail" size={17} />
+              {ui.hero.ctaEmail}
+            </a>
+            <a class="btn" href={url(site.cv[lang])} download>
+              <Icon name="download" size={17} />
+              {ui.hero.ctaCv}
+            </a>
+            <a class="icon-btn icon-lg" href={site.linkedin} rel="me noopener" target="_blank" aria-label="LinkedIn" title="LinkedIn">
+              <Icon name="linkedin" size={18} />
+            </a>
+            <a class="icon-btn icon-lg" href={site.github} rel="me noopener" target="_blank" aria-label="GitHub" title="GitHub">
+              <Icon name="github" size={18} />
+            </a>
+          </div>
+        </div>
+        <div class="hero-photo">
+          <Image
+            src={profile}
+            alt={ui.hero.photoAlt}
+            widths={[240, 360, 480]}
+            sizes="(max-width: 760px) 160px, 240px"
+            loading="eager"
+            fetchpriority="high"
+            format="webp"
+            quality={80}
+          />
+        </div>
+      </div>
+    </div>
+
+    <ul class="stats" role="list">
+      {
+        ui.stats.map((s) => (
+          <li class="panel stat reveal">
+            <p class="stat-value mono tabular" data-count={s.value} data-locale={numberLocale}>
+              {fmt(s.value)}
+              <span class="stat-suffix">{s.suffix}</span>
+            </p>
+            <p class="stat-label">{s.label}</p>
+            <p class="stat-note">{s.note}</p>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="signals panel reveal">
+      <ul role="list">
+        {
+          ui.signals.map((s) => (
+            <li>
+              <span class="mono signal-value">{s.value}</span>
+              <span class="signal-label">{s.label}</span>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="snapshot mono">{ui.hero.snapshot} {formatMonth(site.metricsSnapshot, lang)}</p>
+    </div>
+  </section>
+
+  <!-- Experience -->
+  <section id="experience" class="container section" aria-labelledby="experience-title">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">01 · trace</p>
+        <h2 id="experience-title" class="section-title">{ui.experience.title}</h2>
+        <p class="section-subtitle">{ui.experience.subtitle}</p>
+      </div>
+    </div>
+    <div class="reveal">
+      <Trace lang={lang} />
+    </div>
+  </section>
+
+  <!-- Case studies -->
+  <section id="cases" class="container section" aria-labelledby="cases-title">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">02 · runbooks</p>
+        <h2 id="cases-title" class="section-title">{ui.cases.title}</h2>
+        <p class="section-subtitle">{ui.cases.subtitle}</p>
+      </div>
+    </div>
+    <ul class="cases-grid" role="list">
+      {
+        cases.map((c, i) => (
+          <li class="panel case-card reveal">
+            <div class="panel-head">
+              <span class="panel-title">runbook-{String(i + 1).padStart(2, '0')}</span>
+              <span class="mono">
+                {formatMonth(c.period.start, lang)} – {formatMonth(c.period.end, lang)}
+              </span>
+            </div>
+            <div class="panel-body case-body">
+              <h3 class="case-title">
+                <a href={localePath(lang, `cases/${c.slug}/`)}>{c[lang].title}</a>
+              </h3>
+              <p class="case-summary">{c[lang].summary}</p>
+              <dl class="case-metrics">
+                {c[lang].metrics.slice(0, 3).map((m) => (
+                  <div>
+                    <dt class="mono">{m.value}</dt>
+                    <dd>{m.label}</dd>
+                  </div>
+                ))}
+              </dl>
+              <ul class="chips" role="list">
+                {c.stack.map((s) => (
+                  <li class="chip">{s}</li>
+                ))}
+              </ul>
+              <span class="case-read" aria-hidden="true">
+                {ui.cases.read}
+                <Icon name="arrow-right" size={15} />
+              </span>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <!-- Projects -->
+  <section id="projects" class="container section" aria-labelledby="projects-title">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">03 · services</p>
+        <h2 id="projects-title" class="section-title">{ui.projects.title}</h2>
+        <p class="section-subtitle">{ui.projects.subtitle}</p>
+      </div>
+    </div>
+    <ul class="projects-grid" role="list">
+      {
+        projects.map((p) => (
+          <li class="panel project reveal">
+            <div class="panel-head">
+              <span class="panel-title">
+                <span class="health" aria-hidden="true" />
+                {p.name}
+              </span>
+              {p.stars !== null && (
+                <span class="mono project-stars" aria-label={`${p.stars} GitHub stars`}>
+                  <Icon name="star" size={13} />
+                  {p.stars}
+                </span>
+              )}
+            </div>
+            <div class="panel-body project-body">
+              <p class="project-desc">{p.description[lang]}</p>
+              <ul class="chips" role="list">
+                {p.stack.map((s) => (
+                  <li class="chip">{s}</li>
+                ))}
+              </ul>
+              <div class="project-foot">
+                {p.pushedAt && (
+                  <span class="mono project-updated">
+                    {ui.projects.updated}:{' '}
+                    <time datetime={p.pushedAt}>{formatMonth(p.pushedAt.slice(0, 7), lang)}</time>
+                  </span>
+                )}
+                <a class="project-link" href={p.url} rel="noopener" target="_blank">
+                  <Icon name="github" size={15} />
+                  {ui.projects.source}
+                  <span class="sr-only">: {p.name}</span>
+                </a>
+              </div>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <!-- Stack -->
+  <section id="stack" class="container section" aria-labelledby="stack-title">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">04 · metrics</p>
+        <h2 id="stack-title" class="section-title">{ui.stack.title}</h2>
+        <p class="section-subtitle">{ui.stack.subtitle}</p>
+      </div>
+    </div>
+    <ul class="stack-grid" role="list">
+      {
+        resume.skills.map((s) => (
+          <li class="panel stack-panel reveal">
+            <div class="panel-head">
+              <span class="panel-title">{s.name}</span>
+              <span class="mono">{s.keywords.length}</span>
+            </div>
+            <ul class="chips panel-body" role="list">
+              {s.keywords.map((k) => (
+                <li class="chip">{k}</li>
+              ))}
+            </ul>
+          </li>
+        ))
+      }
+      <li class="panel stack-panel reveal">
+        <div class="panel-head">
+          <span class="panel-title">{ui.stack.languages}</span>
+          <span class="mono">{resume.languages.length}</span>
+        </div>
+        <ul class="panel-body lang-list" role="list">
+          {
+            resume.languages.map((l) => (
+              <li>
+                <span>{l.language}</span>
+                <span class="mono">{l.fluency}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </li>
+    </ul>
+    <details class="panel raw reveal">
+      <summary class="mono">{ui.stack.raw}</summary>
+      <pre class="mono"><code>{rawJson}</code></pre>
+    </details>
+  </section>
+
+  <!-- About -->
+  <section id="about" class="container section" aria-labelledby="about-title">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">05 · logs</p>
+        <h2 id="about-title" class="section-title">{ui.about.title}</h2>
+        <p class="section-subtitle">{ui.about.subtitle}</p>
+      </div>
+    </div>
+    <div class="panel logs reveal">
+      <div class="panel-head">
+        <span class="panel-title">{'{app="leonardo"} |= "career"'}</span>
+        <span class="mono">{logLines.length} lines</span>
+      </div>
+      <ol class="log-lines mono" role="list">
+        {
+          logLines.map(([ts, level, msg]) => (
+            <li class={`log level-${level.toLowerCase()}`}>
+              <span class="log-ts">{ts}</span>
+              <span class="log-level">{level}</span>
+              <span class="log-msg">{msg}</span>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact" class="container section" aria-labelledby="contact-title">
+    <div class="panel contact reveal">
+      <div class="panel-head">
+        <span class="panel-title">
+          <span class="status-dot" aria-hidden="true"></span>
+          alert-channel · contact
+        </span>
+      </div>
+      <div class="contact-body">
+        <div class="contact-copy">
+          <p class="section-kicker">06 · contact</p>
+          <h2 id="contact-title" class="contact-title">{ui.contact.title}</h2>
+          <p class="contact-text">{site.showAvailability ? ui.contact.availability : ui.contact.noAvailability}</p>
+          <div class="email-row">
+            <a class="email-link mono" href={`mailto:${site.email}`}>{site.email}</a>
+            <button type="button" class="btn copy-btn" data-copy={site.email} data-copied={ui.contact.copied}>
+              <Icon name="copy" size={16} />
+              <span data-copy-label>{ui.contact.copy}</span>
+            </button>
+          </div>
+        </div>
+        <ul class="contact-links" role="list">
+          <li>
+            <a class="btn" href={site.linkedin} rel="me noopener" target="_blank">
+              <Icon name="linkedin" size={17} /> LinkedIn
+            </a>
+          </li>
+          <li>
+            <a class="btn" href={site.github} rel="me noopener" target="_blank">
+              <Icon name="github" size={17} /> GitHub
+            </a>
+          </li>
+          <li>
+            <a class="btn" href={url(site.cv.en)} download hreflang="en">
+              <Icon name="download" size={17} />
+              {ui.contact.cvEn}
+            </a>
+          </li>
+          <li>
+            <a class="btn" href={url(site.cv.pt)} download hreflang="pt-BR">
+              <Icon name="download" size={17} />
+              {ui.contact.cvPt}
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // Count-up for the stat panels. The final value is already in the HTML, so this is purely cosmetic.
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const counters = document.querySelectorAll<HTMLElement>('[data-count]');
+  if (!reduce && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          io.unobserve(e.target);
+          const el = e.target as HTMLElement;
+          const target = Number(el.dataset.count);
+          const locale = el.dataset.locale;
+          const textNode = el.firstChild;
+          if (!textNode || textNode.nodeType !== Node.TEXT_NODE) continue;
+          const start = performance.now();
+          const duration = 1100;
+          const tick = (now: number) => {
+            const p = Math.min(1, (now - start) / duration);
+            const eased = 1 - Math.pow(1 - p, 3);
+            textNode.textContent = Math.round(target * eased).toLocaleString(locale);
+            if (p < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }
+      },
+      { threshold: 0.4 },
+    );
+    counters.forEach((c) => io.observe(c));
+  }
+
+  // Copy-to-clipboard for the email; falls back to the mailto link.
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const label = btn.querySelector('[data-copy-label]')!;
+      const original = label.textContent;
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copy!);
+        label.textContent = btn.dataset.copied!;
+        btn.classList.add('is-copied');
+        setTimeout(() => {
+          label.textContent = original;
+          btn.classList.remove('is-copied');
+        }, 1800);
+      } catch {
+        window.location.href = `mailto:${btn.dataset.copy}`;
+      }
+    });
+  });
+</script>
+
+<style>
+  .hero-section {
+    padding-top: clamp(20px, 4vw, 36px);
+  }
+
+  .hero-loc {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hero-body {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: clamp(20px, 4vw, 48px);
+    align-items: center;
+    padding: clamp(24px, 4vw, 44px);
+  }
+
+  .availability {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding: 4px 12px 4px 10px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent);
+    background: var(--ok-soft);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .hero-title {
+    font-size: clamp(2.3rem, 1.6rem + 3.2vw, 4rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.02;
+  }
+
+  .hero-role {
+    display: block;
+    margin-top: 10px;
+    font-size: clamp(1.15rem, 1rem + 0.8vw, 1.6rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+  }
+
+  .hero-pitch {
+    margin-top: 18px;
+    max-width: 62ch;
+    color: var(--text-2);
+    font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  }
+
+  .hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 26px;
+  }
+
+  .icon-lg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .hero-photo {
+    width: 240px;
+    aspect-ratio: 1;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    background: var(--panel-2);
+  }
+
+  .hero-photo :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 30%;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+    list-style: none;
+  }
+
+  .stat {
+    padding: 18px 18px 16px;
+  }
+
+  .stat-value {
+    font-size: clamp(1.9rem, 1.4rem + 1.6vw, 2.6rem);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+
+  .stat-suffix {
+    color: var(--accent);
+  }
+
+  .stat-label {
+    margin-top: 6px;
+    font-weight: 550;
+    color: var(--text);
+  }
+
+  .stat-note {
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .signals {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 24px;
+    margin-top: 12px;
+    padding: 12px 18px;
+  }
+
+  .signals ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    list-style: none;
+  }
+
+  .signals li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-2);
+  }
+
+  .signal-value {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .snapshot {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+
+  /* Cases */
+  .cases-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    list-style: none;
+  }
+
+  .case-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition:
+      border-color 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .case-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+  }
+
+  .case-card:focus-within {
+    border-color: var(--accent);
+  }
+
+  .case-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+  }
+
+  .case-title {
+    font-size: 1.15rem;
+    font-weight: 650;
+  }
+
+  .case-title a {
+    text-decoration: none;
+  }
+
+  .case-title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius);
+  }
+
+  .case-title a:focus-visible {
+    outline: none;
+  }
+
+  .case-summary {
+    color: var(--text-2);
+    font-size: 15px;
+  }
+
+  .case-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0;
+    padding: 12px 0;
+    border-block: 1px dashed var(--border);
+  }
+
+  .case-metrics dt {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .case-metrics dd {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.35;
+  }
+
+  .case-read {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: auto;
+    font-size: 14px;
+    font-weight: 550;
+    color: var(--accent);
+  }
+
+  .case-card:hover .case-read :global(svg) {
+    transform: translateX(3px);
+  }
+
+  .case-read :global(svg) {
+    transition: transform 0.2s ease;
+  }
+
+  /* Projects */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    list-style: none;
+  }
+
+  .project {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .health {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 3px var(--ok-soft);
+  }
+
+  .project-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .project-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+  }
+
+  .project-desc {
+    color: var(--text-2);
+    font-size: 15px;
+  }
+
+  .project-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .project-updated {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .project-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 550;
+    color: var(--accent);
+    text-decoration: none;
+    padding: 6px 0;
+  }
+
+  .project-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Stack */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    list-style: none;
+  }
+
+  .stack-panel .chips {
+    padding: 14px 16px 16px;
+  }
+
+  .lang-list {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+    padding: 14px 16px 16px;
+  }
+
+  .lang-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 14px;
+  }
+
+  .lang-list .mono {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .raw {
+    margin-top: 12px;
+  }
+
+  .raw summary {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-2);
+    cursor: pointer;
+  }
+
+  .raw summary:hover {
+    color: var(--accent);
+  }
+
+  .raw pre {
+    margin: 0;
+    max-height: 420px;
+    overflow: auto;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+    background: var(--panel-2);
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--text-2);
+  }
+
+  /* Logs */
+  .log-lines {
+    list-style: none;
+    padding: 8px 0;
+    font-size: 13px;
+  }
+
+  .log {
+    display: grid;
+    grid-template-columns: 72px 64px 1fr;
+    gap: 12px;
+    padding: 6px 16px;
+    border-left: 3px solid transparent;
+  }
+
+  .log:hover {
+    background: var(--panel-hover);
+  }
+
+  .log-ts {
+    color: var(--muted);
+  }
+
+  .log-level {
+    font-weight: 600;
+  }
+
+  .level-info {
+    border-left-color: var(--info);
+  }
+  .level-info .log-level {
+    color: var(--info);
+  }
+  .level-notice {
+    border-left-color: var(--accent);
+  }
+  .level-notice .log-level {
+    color: var(--accent);
+  }
+  .level-debug {
+    border-left-color: var(--edu);
+  }
+  .level-debug .log-level {
+    color: var(--edu);
+  }
+
+  .log-msg {
+    color: var(--text-2);
+    font-family: var(--font-sans);
+    font-size: 14.5px;
+  }
+
+  /* Contact */
+  .contact {
+    background:
+      radial-gradient(120% 140% at 100% 0%, var(--accent-soft), transparent 55%),
+      var(--panel);
+  }
+
+  .contact-body {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 28px;
+    align-items: center;
+    padding: clamp(24px, 4vw, 44px);
+  }
+
+  .contact-title {
+    font-size: clamp(1.8rem, 1.3rem + 2vw, 2.6rem);
+    font-weight: 700;
+  }
+
+  .contact-text {
+    margin-top: 10px;
+    color: var(--text-2);
+    max-width: 55ch;
+  }
+
+  .email-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    margin-top: 22px;
+  }
+
+  .email-link {
+    font-size: clamp(0.95rem, 0.85rem + 0.5vw, 1.2rem);
+    font-weight: 500;
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  .email-link:hover {
+    color: var(--accent);
+  }
+
+  .copy-btn {
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+
+  .copy-btn.is-copied {
+    border-color: var(--ok);
+    color: var(--ok);
+  }
+
+  .contact-links {
+    display: grid;
+    gap: 10px;
+    list-style: none;
+  }
+
+  .contact-links .btn {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  @media (max-width: 960px) {
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .cases-grid,
+    .projects-grid {
+      grid-template-columns: 1fr;
+    }
+    .contact-body {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .hero-body {
+      grid-template-columns: 1fr;
+    }
+    .hero-photo {
+      order: -1;
+      width: 112px;
+      border-radius: 50%;
+    }
+    .hero-loc {
+      display: none;
+    }
+    .hero-ctas .btn {
+      flex: 1 1 auto;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .stat {
+      padding: 14px;
+    }
+    .stat-note {
+      display: none;
+    }
+    .case-metrics {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .log {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .log-ts,
+    .log-level {
+      display: inline;
+    }
+    .log {
+      display: block;
+    }
+    .log-level {
+      margin-left: 8px;
+    }
+    .log-msg {
+      display: block;
+      margin-top: 2px;
+    }
+  }
+</style>

@@ -1,0 +1,430 @@
+---
+import '../styles/global.css';
+import interFont from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import monoFont from '@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url';
+import Icon from '../components/Icon.astro';
+import CommandPalette from '../components/CommandPalette.astro';
+import { site, t } from '../i18n/ui';
+import { localePath, url, type Lang } from '../lib/resume';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  /** Locale-independent path, e.g. "" for home or "cases/foo/". */
+  path: string;
+  ogType?: 'website' | 'article' | 'profile';
+  jsonLd?: Record<string, unknown>[];
+  noindex?: boolean;
+}
+
+const { lang, title, description, path, ogType = 'website', jsonLd = [], noindex = false } = Astro.props;
+const ui = t(lang);
+const other: Lang = lang === 'en' ? 'pt' : 'en';
+const siteUrl = Astro.site!;
+const abs = (p: string) => new URL(p, siteUrl).href;
+const canonical = abs(localePath(lang, path));
+const altEn = abs(localePath('en', path));
+const altPt = abs(localePath('pt', path));
+const ogImage = abs(url(`og/${lang}.png`));
+const nav = ui.nav;
+const sections = ['experience', 'cases', 'projects', 'stack', 'about', 'contact'] as const;
+---
+
+<!doctype html>
+<html lang={ui.htmlLang} data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <link rel="preload" href={interFont} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={monoFont} as="font" type="font/woff2" crossorigin />
+    <meta name="description" content={description} />
+    <meta name="author" content={site.fullName} />
+    {noindex ? <meta name="robots" content="noindex, follow" /> : <meta name="robots" content="index, follow, max-image-preview:large" />}
+    <link rel="canonical" href={canonical} />
+    {
+      !noindex && (
+        <>
+          <link rel="alternate" hreflang="en" href={altEn} />
+          <link rel="alternate" hreflang="pt-BR" href={altPt} />
+          <link rel="alternate" hreflang="x-default" href={altEn} />
+        </>
+      )
+    }
+    <link rel="sitemap" href={url('sitemap-index.xml')} />
+    <link rel="icon" href={url('favicon.svg')} type="image/svg+xml" />
+    <link rel="apple-touch-icon" href={url('apple-touch-icon.png')} />
+    <meta name="theme-color" content="#0b0c0f" />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${site.name} — ${ui.hero.role}`} />
+    <meta property="og:locale" content={ui.ogLocale} />
+    <meta property="og:locale:alternate" content={t(other).ogLocale} />
+    {ogType === 'profile' && <meta property="profile:first_name" content="Leonardo" />}
+    {ogType === 'profile' && <meta property="profile:last_name" content="Monteiro" />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    {jsonLd.map((data) => <script type="application/ld+json" set:html={JSON.stringify(data)} />)}
+
+    <script is:inline>
+      (function () {
+        var root = document.documentElement;
+        root.classList.add('js');
+        var theme = null;
+        try {
+          theme = localStorage.getItem('theme');
+        } catch (e) {}
+        // Dark is the default; light only when the visitor picked it with the toggle.
+        if (theme !== 'light') theme = 'dark';
+        root.setAttribute('data-theme', theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{ui.skip}</a>
+
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href={localePath(lang)} aria-label={`${site.name}, home`}>
+          <span class="brand-mark mono" aria-hidden="true">lm</span>
+          <span class="brand-text">
+            <span class="brand-name">{site.name}</span>
+            <span class="brand-path mono">/ career-observability</span>
+          </span>
+        </a>
+
+        <nav class="site-nav" aria-label={lang === 'en' ? 'Main' : 'Principal'}>
+          <ul>
+            {
+              sections.map((id) => (
+                <li>
+                  <a href={localePath(lang, `#${id}`)} data-nav={id}>
+                    {nav[id]}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+
+        <div class="header-actions">
+          <button type="button" class="search-btn" data-palette-open aria-haspopup="dialog">
+            <Icon name="search" size={16} />
+            <span class="search-label">{ui.palette.open}</span>
+            <span class="menu-label">Menu</span>
+            <kbd class="mono" data-kbd>Ctrl K</kbd>
+          </button>
+          <a
+            class="icon-btn"
+            href={localePath(other, path)}
+            hreflang={other === 'pt' ? 'pt-BR' : 'en'}
+            lang={other === 'pt' ? 'pt-BR' : 'en'}
+            title={ui.langSwitch.title}
+            aria-label={ui.langSwitch.title}
+            data-lang-switch
+          >
+            {ui.langSwitch.label}
+          </a>
+          <button type="button" class="icon-btn" data-theme-toggle aria-label={ui.theme} title={ui.theme}>
+            <Icon name="sun" size={17} class="theme-icon-light" />
+            <Icon name="moon" size={17} class="theme-icon-dark" />
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p class="mono">© {new Date().getFullYear()} {site.fullName}</p>
+        <p class="footer-built">{ui.footer.built}</p>
+        <ul class="footer-links">
+          <li><a href={site.github} rel="me noopener" target="_blank">GitHub</a></li>
+          <li><a href={site.linkedin} rel="me noopener" target="_blank">LinkedIn</a></li>
+          <li><a href={site.repo} rel="noopener" target="_blank">{ui.footer.source}</a></li>
+        </ul>
+      </div>
+    </footer>
+
+    <CommandPalette lang={lang} path={path} />
+
+    <script>
+      const root = document.documentElement;
+
+      function setTheme(next: 'light' | 'dark') {
+        root.setAttribute('data-theme', next);
+        try {
+          localStorage.setItem('theme', next);
+        } catch {
+          /* storage unavailable: theme still applies for this page view */
+        }
+      }
+
+      document.addEventListener('toggle-theme', () => {
+        setTheme(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+      });
+      document.querySelectorAll('[data-theme-toggle]').forEach((btn) =>
+        btn.addEventListener('click', () => document.dispatchEvent(new Event('toggle-theme'))),
+      );
+
+      // Show the right shortcut hint for the platform.
+      if (/Mac|iPhone|iPad/.test(navigator.platform)) {
+        document.querySelectorAll('[data-kbd]').forEach((el) => (el.textContent = '⌘K'));
+      }
+
+      // Scroll-reveal for panels; content is visible by default when JS or IO is unavailable.
+      const revealables = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                e.target.classList.add('is-visible');
+                io.unobserve(e.target);
+              }
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px' },
+        );
+        revealables.forEach((el) => io.observe(el));
+      } else {
+        revealables.forEach((el) => el.classList.add('is-visible'));
+      }
+
+      // Highlight the nav link of the section in view (home page only).
+      const links = new Map<string, HTMLAnchorElement>();
+      document.querySelectorAll<HTMLAnchorElement>('[data-nav]').forEach((a) => links.set(a.dataset.nav!, a));
+      const sections = [...links.keys()].map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+      if (sections.length && 'IntersectionObserver' in window) {
+        const spy = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              const link = links.get(e.target.id);
+              if (!link) continue;
+              if (e.isIntersecting) {
+                links.forEach((l) => l.removeAttribute('aria-current'));
+                link.setAttribute('aria-current', 'true');
+              }
+            }
+          },
+          { rootMargin: '-45% 0px -50% 0px' },
+        );
+        sections.forEach((s) => spy.observe(s));
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: var(--header-h);
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: saturate(140%) blur(12px);
+    -webkit-backdrop-filter: saturate(140%) blur(12px);
+  }
+
+  .header-inner {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex: none;
+  }
+
+  .brand-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .brand-text {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .brand-name {
+    font-weight: 650;
+    font-size: 15px;
+  }
+
+  .brand-path {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .site-nav {
+    margin-left: auto;
+  }
+
+  .site-nav ul {
+    display: flex;
+    gap: 2px;
+    list-style: none;
+  }
+
+  .site-nav a {
+    display: block;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .site-nav a:hover,
+  .site-nav a[aria-current] {
+    color: var(--text);
+    background: var(--panel-hover);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 8px 0 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .search-btn:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+
+  .search-btn kbd {
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    font-size: 11px;
+  }
+
+  :global([data-theme='dark'] .theme-icon-light),
+  :global([data-theme='light'] .theme-icon-dark) {
+    display: none;
+  }
+
+  @media (max-width: 1080px) {
+    .brand-path {
+      display: none;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .site-nav {
+      display: none;
+    }
+    .header-actions {
+      margin-left: auto;
+    }
+  }
+
+  .menu-label {
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    .search-label,
+    .search-btn kbd {
+      display: none;
+    }
+    .menu-label {
+      display: inline;
+      color: var(--text);
+      font-weight: 550;
+    }
+    .search-btn {
+      padding: 0 12px 0 10px;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .brand-name {
+      font-size: 14px;
+    }
+  }
+
+  .site-footer {
+    margin-top: clamp(56px, 8vw, 96px);
+    border-top: 1px solid var(--border);
+    padding-block: 28px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+  }
+
+  .footer-inner .mono {
+    font-size: 13px;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 16px;
+    list-style: none;
+  }
+
+  .footer-links a {
+    color: var(--text-2);
+  }
+
+  .footer-links a:hover {
+    color: var(--accent);
+  }
+
+  main:focus {
+    outline: none;
+  }
+</style>
